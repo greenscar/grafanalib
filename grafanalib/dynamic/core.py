@@ -10,7 +10,9 @@ import attr
 from attr.validators import instance_of
 import itertools
 import math
+import pdb
 from numbers import Number
+from jinja2 import Environment, PackageLoader
 
 
 @attr.s
@@ -70,11 +72,13 @@ FLOT = 'flot'
 DASHBOARD_TYPE = 'dashboard'
 GRAPH_TYPE = 'graph'
 SINGLESTAT_TYPE = 'singlestat'
+PIEGRAPH_TYPE = 'grafana-piechart-panel'
 
 DEFAULT_FILL = 1
-DEFAULT_REFRESH = '10s'
+DEFAULT_REFRESH = False
 DEFAULT_ROW_HEIGHT = Pixels(250)
 DEFAULT_LINE_WIDTH = 2
+DEFAULT_STROKE_WIDTH = 1
 DEFAULT_POINT_RADIUS = 5
 DEFAULT_RENDERER = FLOT
 DEFAULT_STEP = 10
@@ -92,10 +96,12 @@ DURATION_FORMAT = "dtdurations"
 NO_FORMAT = "none"
 OPS_FORMAT = "ops"
 PERCENT_UNIT_FORMAT = "percentunit"
+PERCENT_100_FORMAT = "percent"
 SECONDS_FORMAT = "s"
 MILLISECONDS_FORMAT = "ms"
 SHORT_FORMAT = "short"
 BYTES_FORMAT = "bytes"
+MEGABYTES_FORMAT = "decmbytes"
 
 # Alert rule state
 STATE_NO_DATA = "no_data"
@@ -341,12 +347,13 @@ class Row(object):
     height = attr.ib(default=DEFAULT_ROW_HEIGHT, validator=instance_of(Pixels))
     showTitle = attr.ib(default=None)
     title = attr.ib(default=None)
+    titleSize = attr.ib(default="h6")
 
     def _iter_panels(self):
         return iter(self.panels)
 
     def _map_panels(self, f):
-        return attr.assoc(self, panels=list(map(f, self.panels)))
+        return attr.evolve(self, panels=list(map(f, self.panels)))
 
     def to_json_data(self):
         showTitle = False if self.title is None else True
@@ -357,7 +364,11 @@ class Row(object):
             'height': self.height,
             'panels': self.panels,
             'showTitle': showTitle,
+            'titleSize': self.titleSize,
             'title': title,
+            'repeat': None,
+            'repeatRowId': None,
+            'repeatIteration': None            
         }
 
 
@@ -429,9 +440,11 @@ class Template(object):
             'refresh': 1,
             'regex': '',
             'sort': 1,
-            'tagValuesQuery': None,
+            'tagValuesQuery': '',
+            'tags': [],
             'tagsQuery': None,
             'type': 'query',
+            'useTags': False
         }
 
 
@@ -550,6 +563,12 @@ class TimeRange(object):
         return [self.from_time, self.to_time]
 
 
+"""
+Alerts currently not working. Returns 
+TypeError: can only concatenate list (not "TimeRange") to list
+> /Users/jsandlin/workspaces/devops/scripts/pythonlib/grafanalib/dynamic/core.py(587)to_json_data()
+NOT PRIORITY as we dont use grafana for alerts currently.
+"""
 @attr.s
 class AlertCondition(object):
     """
@@ -576,6 +595,7 @@ class AlertCondition(object):
     type = attr.ib(default=CTYPE_QUERY)
 
     def to_json_data(self):
+        pdb.set_trace()
         queryParams = [self.target.refId] + self.timeRange
         return {
             "evaluator": self.evaluator,
@@ -616,98 +636,32 @@ class Alert(object):
             "name": self.name,
             "noDataState": self.noDataState,
             "notifications": self.notifications,
-        }
-
-
+        }      
+    
+ 
 @attr.s
-class Dashboard(object):
-
-    title = attr.ib()
-    rows = attr.ib()
-    annotations = attr.ib(
-        default=Annotations(),
-        validator=instance_of(Annotations),
-    )
-    editable = attr.ib(
-        default=True,
-        validator=instance_of(bool),
-    )
-    gnetId = attr.ib(default=None)
-    hideControls = attr.ib(
-        default=False,
-        validator=instance_of(bool),
-    )
+class TextHeader(object):
+    text = attr.ib(validator=instance_of(str))
+    mode = attr.ib(default="html")
     id = attr.ib(default=None)
-    links = attr.ib(default=attr.Factory(list))
-    refresh = attr.ib(default=DEFAULT_REFRESH)
-    schemaVersion = attr.ib(default=SCHEMA_VERSION)
-    sharedCrosshair = attr.ib(
-        default=False,
-        validator=instance_of(bool),
-    )
-    style = attr.ib(default=DARK_STYLE)
-    tags = attr.ib(default=attr.Factory(list))
-    templating = attr.ib(
-        default=Templating(),
-        validator=instance_of(Templating),
-    )
-    time = attr.ib(
-        default=DEFAULT_TIME,
-        validator=instance_of(Time),
-    )
-    timePicker = attr.ib(
-        default=DEFAULT_TIME_PICKER,
-        validator=instance_of(TimePicker),
-    )
-    timezone = attr.ib(default=UTC)
-    version = attr.ib(default=0)
-
-    def _iter_panels(self):
-        for row in self.rows:
-            for panel in row._iter_panels():
-                yield panel
-
-    def _map_panels(self, f):
-        return attr.assoc(self, rows=[r._map_panels(f) for r in self.rows])
-
-    def auto_panel_ids(self):
-        """Give unique IDs all the panels without IDs.
-
-        Returns a new ``Dashboard`` that is the same as this one, except all
-        of the panels have their ``id`` property set. Any panels which had an
-        ``id`` property set will keep that property, all others will have
-        auto-generated IDs provided for them.
-        """
-        ids = set([panel.id for panel in self._iter_panels() if panel.id])
-        auto_ids = (i for i in itertools.count(1) if i not in ids)
-
-        def set_id(panel):
-            return panel if panel.id else attr.assoc(panel, id=next(auto_ids))
-        return self._map_panels(set_id)
-
+    height=attr.ib(default=Pixels(25), validator=instance_of(Pixels))
+    isNew = attr.ib(default=True, validator=instance_of(bool))
+    span = attr.ib(default=12, validator=instance_of(int))
+    transparent = attr.ib(default=True, validator=instance_of(bool))
+    
     def to_json_data(self):
         return {
-            'annotations': self.annotations,
-            'editable': self.editable,
-            'gnetId': self.gnetId,
-            'hideControls': self.hideControls,
-            'id': self.id,
-            'links': self.links,
-            'refresh': self.refresh,
-            'rows': self.rows,
-            'schemaVersion': self.schemaVersion,
-            'sharedCrosshair': self.sharedCrosshair,
-            'style': self.style,
-            'tags': self.tags,
-            'templating': self.templating,
-            'title': self.title,
-            'time': self.time,
-            'timepicker': self.timePicker,
-            'timezone': self.timezone,
-            'version': self.version,
-        }
-
-
+          'content': "<div class=\"text-center dashboard-header\"><span>" + self.text + "</span></div>",
+          'links': [],
+          'mode': self.mode,
+          'span': self.span,
+          'title': '',
+          'id': self.id,
+          'isNew': self.isNew,
+          'transparent': self.transparent,
+          'type': "text"
+        }       
+       
 @attr.s
 class Graph(object):
 
@@ -744,10 +698,13 @@ class Graph(object):
         default=attr.Factory(Tooltip),
         validator=instance_of(Tooltip),
     )
+    yformat = attr.ib(default=SHORT_FORMAT)
     xAxis = attr.ib(default=attr.Factory(XAxis), validator=instance_of(XAxis))
     # XXX: This isn't a *good* default, rather it's the default Grafana uses.
+    
     yAxes = attr.ib(
         default=attr.Factory(lambda: [YAxis(format=SHORT_FORMAT)] * 2))
+
     alert = attr.ib(default=None)
 
     def to_json_data(self):
@@ -787,6 +744,63 @@ class Graph(object):
             graphObject['alert'] = self.alert
         return graphObject
 
+@attr.s
+class PieGraph(object):
+    title = attr.ib()
+    dataSource = attr.ib()
+    targets = attr.ib()
+    aliasColors = attr.ib(default=attr.Factory(dict))
+    pieType = attr.ib(default="pie", validator=instance_of(str))
+    cacheTimeout = attr.ib(default=None)
+    editable = attr.ib(default=True, validator=instance_of(bool))
+    id = attr.ib(default=None)
+    isNew = attr.ib(default=True, validator=instance_of(bool))
+    format = attr.ib(default="percent", validator=instance_of(str))
+    span = attr.ib(default=None)
+    strokeWidth = attr.ib(default=DEFAULT_STROKE_WIDTH)
+    error = attr.ib(default=False, validator=instance_of(bool))
+    height = attr.ib(default=None)
+    fontSize = attr.ib(default="80%")
+    links = attr.ib(default=attr.Factory(list))
+    maxDataPoints = attr.ib(default=3, validator=instance_of(int))
+    nullPointMode = attr.ib(default="connected", validator=instance_of(str))
+    valueName = attr.ib(default="current", validator=instance_of(str))
+    legendType = attr.ib(default="Under graph")
+    legend = attr.ib(
+        default=attr.Factory(Legend),
+        validator=instance_of(Legend),
+    )
+    
+    alert = attr.ib(default=None)
+
+    def to_json_data(self):
+        graphObject = {
+            'datasource': self.dataSource,
+            'targets': self.targets,
+            'title': self.title,
+            'aliasColors': self.aliasColors,
+            'type': PIEGRAPH_TYPE,
+            'pieType': self.pieType,
+            'cacheTimeout' : self.cacheTimeout,
+            'editable' : self.editable,
+            'id' : self.id,
+            'isNew' : self.isNew,
+            'format' : self.format,
+            'span' : self.span,
+            'strokeWidth' : self.strokeWidth,
+            'error' : self.error,
+            'height' : self.height,
+            'fontSize' : self.fontSize,
+            'links' : self.links,
+            'maxDataPoints' : self.maxDataPoints,
+            'nullPointMode' : self.nullPointMode,
+            'valueName' : self.valueName,
+            'legendType' : self.legendType,
+            'legend' : self.legend
+        }
+        if self.alert:
+            graphObject['alert'] = self.alert
+        return graphObject
 
 @attr.s
 class SparkLine(object):
@@ -830,8 +844,7 @@ class RangeMap(object):
             'to': self.end,
             'text': self.text,
         }
-
-
+        
 @attr.s
 class Gauge(object):
 

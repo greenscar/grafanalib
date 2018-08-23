@@ -1,0 +1,1058 @@
+import itertools
+
+from grafanalib.dynamic.core import *
+from grafanalib.dynamic.dashboard import Dashboard
+
+dashboard = Dashboard(
+  title="NFS Inode Usage",
+  timezone="browser",
+  #refresh="5s",
+  rows=[
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='NFS Share: 10.242.228.13:/modok_prod_data',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            SingleStat(
+                title="inodes total",
+                span=1,
+                dataSource="{{database}}",
+                format=SHORT_FORMAT,
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT last("inodes_total") FROM "disk" WHERE "device" = \'10.242.228.13:/modok_prod_data\'',
+                        alias='INODES_TOTAL'
+                    ),
+                ]
+            ),
+            Graph(
+                title="inode counts: /mnt/modok_prod_data/",
+                span=5,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/awx\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='awx'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/chronograf\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='chronograf'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/coverity\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='coverity'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/elasticsearch\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='elasticsearch'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/elk\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='elk'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/githooks\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='githooks'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/grafana\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='grafana'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/icinga\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='icinga'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/influxdb\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='influxdb'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/kapacitor\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='kapacitor'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/mobilereports\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='mobilereports'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/mongo\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='mongo'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/mysql\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='mysql'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/nexus\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='nexus'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/postgres\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='postgres'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/testrail\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='testrail'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_used") AS mean_inodes FROM "disk" WHERE "device" = \'10.242.228.13:/modok_prod_data\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='USED'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_total") AS mean_inodes FROM "disk" WHERE "device" = \'10.242.228.13:/modok_prod_data\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='TOTAL'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="1 day change: /mnt/modok_prod_data/",
+                bars=True,
+                lines=False,
+                span=5,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/awx\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='awx'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/chronograf\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='chronograf'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/coverity\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='coverity'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/elasticsearch\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='elasticsearch'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/elk\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='elk'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/githooks\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='githooks'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/grafana\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='grafana'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/icinga\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='icinga'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/influxdb\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='influxdb'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/kapacitor\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='kapacitor'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/mobilereports\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='mobilereports'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/mongo\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='mongo'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/mysql\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='mysql'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/nexus\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='nexus'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/postgres\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='postgres'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_data/testrail\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='testrail'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            SingleStat(
+                title="used",
+                span=1,
+                dataSource="{{database}}",
+                format='percent',
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT (last("inodes_used") / last("inodes_total")) * 100.0 FROM "disk" WHERE "device" = \'10.242.228.13:/modok_prod_data\'',
+                        alias='USED_PERCENT'
+                    ),
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='NFS Share: 10.242.228.13:/modok_prod_static',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            SingleStat(
+                title="inodes total",
+                span=1,
+                dataSource="{{database}}",
+                format=SHORT_FORMAT,
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT last("inodes_total") FROM "disk" WHERE "device" = \'10.242.228.13:/modok_prod_static\'',
+                        alias='INODES_TOTAL'
+                    ),
+                ]
+            ),
+            Graph(
+                title="inode counts: /mnt/modok_prod_static/",
+                span=5,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_static/andr\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='andr'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_static/ios\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='ios'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_static/qe\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='qe'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_used") AS mean_inodes FROM "disk" WHERE "device" = \'10.242.228.13:/modok_prod_static\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='USED'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_total") AS mean_inodes FROM "disk" WHERE "device" = \'10.242.228.13:/modok_prod_static\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='TOTAL'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="1 day change: /mnt/modok_prod_static/",
+                bars=True,
+                lines=False,
+                span=5,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_static/andr\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='andr'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_static/ios\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='ios'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_prod_static/qe\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='qe'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            SingleStat(
+                title="used",
+                span=1,
+                dataSource="{{database}}",
+                format='percent',
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT (last("inodes_used") / last("inodes_total")) * 100.0 FROM "disk" WHERE "device" = \'10.242.228.13:/modok_prod_static\'',
+                        alias='USED_PERCENT'
+                    ),
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='NFS Share: 10.242.228.13:/modok_nexus',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            SingleStat(
+                title="inodes total",
+                span=1,
+                dataSource="{{database}}",
+                format=SHORT_FORMAT,
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT last("inodes_total") FROM "disk" WHERE "device" = \'10.242.228.13:/modok_nexus\'',
+                        alias='INODES_TOTAL'
+                    ),
+                ]
+            ),
+            Graph(
+                title="inode counts: /mnt/modok_nexus/",
+                span=5,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_nexus/sonatype-work\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='sonatype-work'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_used") AS mean_inodes FROM "disk" WHERE "device" = \'10.242.228.13:/modok_nexus\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='USED'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_total") AS mean_inodes FROM "disk" WHERE "device" = \'10.242.228.13:/modok_nexus\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='TOTAL'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="1 day change: /mnt/modok_nexus/",
+                bars=True,
+                lines=False,
+                span=5,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_nexus/sonatype-work\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='sonatype-work'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            SingleStat(
+                title="used",
+                span=1,
+                dataSource="{{database}}",
+                format='percent',
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT (last("inodes_used") / last("inodes_total")) * 100.0 FROM "disk" WHERE "device" = \'10.242.228.13:/modok_nexus\'',
+                        alias='USED_PERCENT'
+                    ),
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='NFS Share: 10.242.228.13:/modok_jenkins',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            SingleStat(
+                title="inodes total",
+                span=1,
+                dataSource="{{database}}",
+                format=SHORT_FORMAT,
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT last("inodes_total") FROM "disk" WHERE "device" = \'10.242.228.13:/modok_jenkins\'',
+                        alias='INODES_TOTAL'
+                    ),
+                ]
+            ),
+            Graph(
+                title="inode counts: /mnt/modok_jenkins/",
+                span=5,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_jenkins/archive\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='archive'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_jenkins/prod\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='prod'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/modok_jenkins/test\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='test'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_used") AS mean_inodes FROM "disk" WHERE "device" = \'10.242.228.13:/modok_jenkins\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='USED'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_total") AS mean_inodes FROM "disk" WHERE "device" = \'10.242.228.13:/modok_jenkins\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='TOTAL'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="1 day change: /mnt/modok_jenkins/",
+                bars=True,
+                lines=False,
+                span=5,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_jenkins/archive\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='sonatype-work'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_jenkins/prod\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='sonatype-work'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/modok_jenkins/test\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='sonatype-work'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            SingleStat(
+                title="used",
+                span=1,
+                dataSource="{{database}}",
+                format='percent',
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT (last("inodes_used") / last("inodes_total")) * 100.0 FROM "disk" WHERE "device" = \'10.242.228.13:/modok_jenkins\'',
+                        alias='USED_PERCENT'
+                    ),
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='NFS Share: 10.254.200.51:/mobi_devops',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            SingleStat(
+                title="inodes total",
+                span=1,
+                dataSource="{{database}}",
+                format=SHORT_FORMAT,
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT last("inodes_total") FROM "disk" WHERE "device" = \'10.254.200.51:/mobi_devops\'',
+                        alias='INODES_TOTAL'
+                    ),
+                ]
+            ),
+            Graph(
+                title="inode counts: /mnt/mobi_devops/",
+                span=5,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/coverity\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='coverity'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='prod'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/qe_reports\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='qe_reports'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='test'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_used") AS mean_inodes FROM "disk" WHERE "device" = \'10.254.200.51://mobi_devops\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='USED'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_total") AS mean_inodes FROM "disk" WHERE "device" = \'10.254.200.51://mobi_devops\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='TOTAL'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="1 day change: /mnt/mobi_devops/",
+                bars=True,
+                lines=False,
+                span=5,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/coverity\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='coverity'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='prod'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/qe_reports\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='qe_reports'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='test'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            SingleStat(
+                title="used",
+                span=1,
+                dataSource="{{database}}",
+                format='percent',
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT (last("inodes_used") / last("inodes_total")) * 100.0 FROM "disk" WHERE "device" = \'10.254.200.51:/mobi_devops\'',
+                        alias='USED_PERCENT'
+                    ),
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="inode counts: /mnt/mobi_devops/prod/",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/awx\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='awx'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/chronograf\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='chronograf'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/coverity\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='coverity'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/elasticsearch\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='elasticsearch'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/elk\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='elk'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/githooks\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='githooks'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/grafana\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='grafana'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/icinga\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='icinga'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/influxdb\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='influxdb'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/kapacitor\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='kapacitor'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/mobilereports\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='mobilereports'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/mongo\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='mongo'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/mysql\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='mysql'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/nexus\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='nexus'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/postgres\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='postgres'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/testrail\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='testrail'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="1 day change: /mnt/mobi_devops/prod",
+                bars=True,
+                lines=False,
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/awx\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='awx'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/chronograf\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='chronograf'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/coverity\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='coverity'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/elasticsearch\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='elasticsearch'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/elk\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='elk'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/githooks\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='githooks'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/grafana\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='grafana'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/icinga\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='icinga'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/influxdb\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='influxdb'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/kapacitor\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='kapacitor'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/mobilereports\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='mobilereports'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/mongo\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='mongo'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/mysql\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='mysql'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/nexus\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='nexus'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/postgres\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='postgres'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/testrail\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='testrail'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="inode counts: /mnt/mobi_devops/qe_reports/",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/qe_reports/espressotests\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='espressotests'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/qe_reports/iOS\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='iOS'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="1 day change: /mnt/mobi_devops/qe_reports",
+                bars=True,
+                lines=False,
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/qe_reports/espressotests\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='espressotests'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/qe_reports/iOS\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='iOS'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="inode counts: /mnt/mobi_devops/test/",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/codecov\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='codecov'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/coverity\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='coverity'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/githooks\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='githooks'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/icinga\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='icinga'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/jenkins\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='jenkins'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/mobilereports\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='mobilereports'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/postgres\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='postgres'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="1 day change: /mnt/mobi_devops/test",
+                bars=True,
+                lines=False,
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/codecov\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='codecov'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/coverity\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='coverity'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/githooks\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='githooks'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/icinga\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='icinga'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/jenkins\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='jenkins'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/mobilereports\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='mobilereports'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/test/postgres\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='postgres'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="inode counts: /mnt/mobi_devops/prod/mobilereports/static_files/",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/mobilereports/static_files/andr\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='andr'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/mobilereports/static_files/ios\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='ios'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_inodes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/mobilereports/static_files/qe\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='qe'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+
+            Graph(
+                title="1 day change: /mnt/mobi_devops/static_files",
+                bars=True,
+                lines=False,
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/mobilereports/static_files/andr\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='andr'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/mobilereports/static_files/ios\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='ios'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_devops/prod/mobilereports/static_files/qe\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='qe'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+
+        ] # END panels
+    ), # END row
+
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='NFS Share: 10.254.200.51:/mobi_jenkins',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            SingleStat(
+                title="inodes total",
+                span=1,
+                dataSource="{{database}}",
+                format=SHORT_FORMAT,
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT last("inodes_total") FROM "disk" WHERE "device" = \'10.254.200.46:/mobi_jenkins\'',
+                        alias='INODES_TOTAL'
+                    ),
+                ]
+            ),
+            Graph(
+                title="inode counts: /mnt/mobi_jenkins/",
+                span=5,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_jenkins/archive\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='archive'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_jenkins/prod\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='prod'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_jenkins/test\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='test'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_used") AS mean_inodes FROM "disk" WHERE "device" = \'10.254.200.46:/mobi_jenkins\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='USED'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_total") AS mean_inodes FROM "disk" WHERE "device" = \'10.254.200.46:/mobi_jenkins\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='TOTAL'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="1 day change: /mnt/mobi_jenkins/",
+                bars=True,
+                lines=False,
+                span=5,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_jenkins/archive\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='archive'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_jenkins/prod\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='prod'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_jenkins/test\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='test'
+                    )
+
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            SingleStat(
+                title="used",
+                span=1,
+                dataSource="{{database}}",
+                format='percent',
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT (last("inodes_used") / last("inodes_total")) * 100.0 FROM "disk" WHERE "device" = \'10.254.200.46:/mobi_jenkins\'',
+                        alias='USED_PERCENT'
+                    ),
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="inode counts: /mnt/mobi_jenkins/prod/jenkins",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_jenkins/prod/jenkins/ios\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='ios'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_jenkins/prod/jenkins/andr\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='andr'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes") AS mean_bytes FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_jenkins/prod/jenkins/qe\' AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='qe'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="1 day change: /mnt/mobi_jenkins/prod/jenkins",
+                bars=True,
+                lines=False,
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_jenkins/prod/jenkins/ios\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='ios'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_jenkins/prod/jenkins/andr\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='andr'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT difference(last("inodes")) FROM "disk_usage" WHERE "dir" = \'/mnt/mobi_jenkins/prod/jenkins/qe\' AND $timeFilter GROUP BY time(1d) fill(null)',
+                        alias='qe'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+        ] # END panels
+    ) # END row
+  ]
+)

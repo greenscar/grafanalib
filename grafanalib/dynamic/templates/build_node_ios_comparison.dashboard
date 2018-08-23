@@ -1,0 +1,1182 @@
+import itertools
+
+from grafanalib.dynamic.core import *
+from grafanalib.dynamic.dashboard import Dashboard
+
+dashboard = Dashboard(
+  title="m2l vs m3l",
+  timezone="browser",
+  refresh="",
+  tags = "{{grafana_tags}}",
+
+  templating = Templating(
+    list=[
+      Template(
+        default="",
+        dataSource="{{database}}",
+        label="m2l Host",
+        name="m2l_host",
+        query="show tag values with key = \"host\" where \"host\" =~ /^pm2li94-[\d]{2}/"
+      ),
+      Template(
+        default="",
+        dataSource="{{database}}",
+        label="m3l Host",
+        name="m3l_host",
+        query="show tag values with key = \"host\" where \"host\" =~ /^pm3li94-[\d]{2}/"
+      )
+    ]   
+  ),
+
+  rows=[
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='SYSTEM ($m2l_host vs $m3l_host)',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            Graph(
+                title="cpu load",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("load1") AS mean_load1 FROM "system" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_load1'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("load1") AS mean_load1 FROM "system" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_load1'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("load5") AS mean_load5 FROM "system" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_load5'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("load5") AS mean_load5 FROM "system" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_load5'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("load15") AS mean_load15 FROM "system" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_load15'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("load15") AS mean_load15 FROM "system" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_load15'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="cpu count",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("n_cpus") AS mean_n_cpus FROM "system" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_cpus'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("n_cpus") AS mean_n_cpus FROM "system" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_cpus'
+                    )
+                ],
+                yAxes=[
+                  YAxis(format=SHORT_FORMAT, min=None, show=True),
+                  YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+          )
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="system users",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("n_users") AS mean_n_users FROM "system" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_users'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("n_users") AS mean_n_users FROM "system" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_users'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="system uptime",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("uptime") AS mean_uptime FROM "system" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_uptime'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("uptime") AS mean_uptime FROM "system" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_uptime'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("uptime_format") AS mean_uptime_format FROM "system" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_uptime format'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("uptime_format") AS mean_uptime_format FROM "system" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_uptime format'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SECONDS_FORMAT, min=None, show=True),
+                    YAxis(format=SECONDS_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='MEMORY ($m2l_host vs $m3l_host)',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            Graph(
+                title="memory total and used",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("total") AS mean_total FROM "mem" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_total'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("total") AS mean_total FROM "mem" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_total'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("used") AS mean_used FROM "mem" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_used'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("used") AS mean_used FROM "mem" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_used'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=BYTES_FORMAT, min=None, show=True),
+                    YAxis(format=BYTES_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="memory percent used",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("available_percent") AS mean_available_percent FROM "mem" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_available percent'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("available_percent") AS mean_available_percent FROM "mem" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_available percent'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("used_percent") AS mean_used_percent FROM "mem" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_used percent'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("used_percent") AS mean_used_percent FROM "mem" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_used percent'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=PERCENT_100_FORMAT, min=None, show=True),
+                    YAxis(format=PERCENT_100_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="memory usage",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("active") AS mean_active FROM "mem" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_active'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("active") AS mean_active FROM "mem" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_active'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("available") AS mean_available FROM "mem" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_available'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("available") AS mean_available FROM "mem" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_available'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("free") AS mean_free FROM "mem" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_free'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("free") AS mean_free FROM "mem" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_free'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("cached") AS mean_cached FROM "mem" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_cached'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("cached") AS mean_cached FROM "mem" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_cached'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inactive") AS mean_inactive FROM "mem" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_inactive'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inactive") AS mean_inactive FROM "mem" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_inactive'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("wired") AS mean_inactive FROM "mem" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_wired'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("wired") AS mean_inactive FROM "mem" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_wired'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=BYTES_FORMAT, min=None, show=True),
+                    YAxis(format=BYTES_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="memory buffered and slab",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("buffered") AS mean_buffered FROM "mem" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_buffered'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("buffered") AS mean_buffered FROM "mem" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_buffered'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("slab") AS mean_slab FROM "mem" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_slab'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("slab") AS mean_slab FROM "mem" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_slab'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=BYTES_FORMAT, min=None, show=True),
+                    YAxis(format=BYTES_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='CPU ($m2l_host vs $m3l_host)',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            Graph(
+                title="cpu system and steal time",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_system"), 1s) AS mean_time_system FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_time system'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_system"), 1s) AS mean_time_system FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_time system'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_steal"), 1s) AS mean_time_steal FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_time steal'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_steal"), 1s) AS mean_time_steal FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_time steal'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="cpu system and steal usage",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_system") AS mean_usage_system FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_usage system'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_system") AS mean_usage_system FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_usage system'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_steal") AS mean_usage_steal FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_usage steal'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_steal") AS mean_usage_steal FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_usage steal'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="cpu active and idle time",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_active"), 1s) AS mean_time_active FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_time active'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_active"), 1s) AS mean_time_active FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_time active'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_idle"), 1s) AS mean_time_idle FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_time idle'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_idle"), 1s) AS mean_time_idle FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_time idle'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="cpu active and idle usage",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_active") AS mean_usage_active FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_usage active'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_active") AS mean_usage_active FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_usage active'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_idle") AS mean_usage_idle FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_usage idle'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_idle") AS mean_usage_idle FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_usage idle'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="cpu user and guest time",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_user"), 1s) AS mean_time_user FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_time user'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_user"), 1s) AS mean_time_user FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_time user'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_guest"), 1s) AS mean_time_guest FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_time guest'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_guest"), 1s) AS mean_time_guest FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_time guest'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="cpu user and guest usage",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_user") AS mean_usage_user FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_usage user'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_user") AS mean_usage_user FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_usage user'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_guest") AS mean_usage_guest FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_usage guest'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_guest") AS mean_usage_guest FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_usage guest'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="cpu irq, softirq and iowait time",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_irq"), 1s) AS mean_time_irq FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_time irq'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_irq"), 1s) AS mean_time_irq FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_time irq'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_softirq"), 1s) AS mean_time_softirq FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_time softirq'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_softirq"), 1s) AS mean_time_softirq FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_time softirq'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_iowait"), 1s) AS mean_time_iowait FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_time iowait'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_iowait"), 1s) AS mean_time_iowait FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_time iowait'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="cpu irq, softirq and iowait usage",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_irq") AS mean_usage_irq FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_usage irq'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_irq") AS mean_usage_irq FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_usage irq'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_softirq") AS mean_usage_softirq FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_usage softirq'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_softirq") AS mean_usage_softirq FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_usage softirq'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_iowait") AS mean_usage_iowait FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_usage iowait'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_iowait") AS mean_usage_iowait FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_usage iowait'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="cpu nice time",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_nice"), 1s) AS mean_time_nice FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_time nice'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_nice"), 1s) AS mean_time_nice FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_time nice'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_guest_nice"), 1s) AS mean_time_guest_nice FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_time guest nice'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("time_guest_nice"), 1s) AS mean_time_guest_nice FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_time guest nice'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="cpu nice usage",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_nice") AS mean_usage_nice FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_usage nice'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_nice") AS mean_usage_nice FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_usage nice'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_guest_nice") AS mean_usage_guest_nice FROM "cpu" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_usage guest nice'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("usage_guest_nice") AS mean_usage_guest_nice FROM "cpu" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_usage guest nice'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='DISK ($m2l_host vs $m3l_host)',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            Graph(
+                title="disk inodes free and total",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_free") AS mean_inodes_free FROM "disk" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_inodes free'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_free") AS mean_inodes_free FROM "disk" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_inodes free'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_total") AS mean_inodes_total FROM "disk" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_inodes total'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_total") AS mean_inodes_total FROM "disk" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_inodes total'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="disk inodes used",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_used") AS mean_inodes_used FROM "disk" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_inodes used'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("inodes_used") AS mean_inodes_used FROM "disk" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_inodes used'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="disk space",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("total") AS mean_total FROM "disk" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_total'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("total") AS mean_total FROM "disk" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_total'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("used") AS mean_used FROM "disk" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_used'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("used") AS mean_used FROM "disk" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_used'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("free") AS mean_free FROM "disk" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_free'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("free") AS mean_free FROM "disk" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_free'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="disk used percent",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("used_percent") AS mean_used_percent FROM "disk" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_used percent'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("used_percent") AS mean_used_percent FROM "disk" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_used percent'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=PERCENT_100_FORMAT, min=None, show=True),
+                    YAxis(format=PERCENT_100_FORMAT, min=None, show=True)
+                ]
+            ),
+        ] # END panels
+    ), # END row
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='DISKIO ($m2l_host vs $m3l_host)',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            Graph(
+                title="disk io",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("io_time"), 1s) AS mean_io_time FROM "diskio" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_io time'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("io_time"), 1s) AS mean_io_time FROM "diskio" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_io time'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("weighted_io_time"), 1s) AS mean_weighted_io_time FROM "diskio" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_weighted i/o time'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("weighted_io_time"), 1s) AS mean_weighted_io_time FROM "diskio" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_weighted i/o time'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="disk iops in progress",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("iops_in_progress") AS mean_iops_in_progress FROM "diskio" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_iops in progress'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("iops_in_progress") AS mean_iops_in_progress FROM "diskio" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_iops in progress'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="diskio read bytes",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("read_bytes"), 1s) AS mean_read_bytes FROM "diskio" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_read bytes'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("read_bytes"), 1s) AS mean_read_bytes FROM "diskio" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_read bytes'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="diskio write bytes",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("write_bytes"), 1s) AS mean_write_bytes FROM "diskio" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_write bytes'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("write_bytes"), 1s) AS mean_write_bytes FROM "diskio" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_write bytes'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="diskio read time",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("read_time"), 1s) AS mean_read_time FROM "diskio" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_read time'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("read_time"), 1s) AS mean_read_time FROM "diskio" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_read time'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="diskio write time",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("write_time"), 1s) AS mean_write_time FROM "diskio" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_write time'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("write_time"), 1s) AS mean_write_time FROM "diskio" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_write time'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="diskio reads",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("reads"), 1s) AS mean_reads FROM "diskio" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_reads'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("reads"), 1s) AS mean_reads FROM "diskio" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_reads'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="diskio writes",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("writes"), 1s) AS mean_writes FROM "diskio" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_writes'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT NON_NEGATIVE_DERIVATIVE(mean("writes"), 1s) AS mean_writes FROM "diskio" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_writes'
+                    ),
+                ],
+                yAxes=[
+                  YAxis(format=SHORT_FORMAT, min=None, show=True),
+                  YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='PROCESSES ($m2l_host vs $m3l_host)',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            Graph(
+                title="processes states",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("running") AS mean_running FROM "processes" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_running'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("running") AS mean_running FROM "processes" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_running'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("blocked") AS mean_blocked FROM "processes" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_blocked'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("blocked") AS mean_blocked FROM "processes" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_blocked'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("dead") AS mean_dead FROM "processes" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_dead'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("dead") AS mean_dead FROM "processes" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_dead'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("idle") AS mean_idle FROM "processes" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_idle'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("idle") AS mean_idle FROM "processes" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_idle'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("paging") AS mean_paging FROM "processes" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_paging'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("paging") AS mean_paging FROM "processes" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_paging'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("stopped") AS mean_stopped FROM "processes" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_stopped'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("stopped") AS mean_stopped FROM "processes" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_stopped'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="processes sleeping and total",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("sleeping") AS mean_sleeping FROM "processes" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_sleeping'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("sleeping") AS mean_sleeping FROM "processes" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_sleeping'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("total") AS mean_total FROM "processes" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_total'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("total") AS mean_total FROM "processes" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_total'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="processes total threads",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("total_threads") AS mean_total_threads FROM "processes" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_total threads'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("total_threads") AS mean_total_threads FROM "processes" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_total threads'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="processes zombies and unknown",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("zombies") AS mean_zombies FROM "processes" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_zombies'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("zombies") AS mean_zombies FROM "processes" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_zombies'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("unknown") AS mean_unknown FROM "processes" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_unknown'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("unknown") AS mean_unknown FROM "processes" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_unknown'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='SWAP ($m2l_host vs $m3l_host)',
+                span=12
+            )
+        ]
+    ),
+    Row(
+        panels=[
+            Graph(
+                title="swap free and total",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("free") AS mean_free FROM "swap" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_free'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("free") AS mean_free FROM "swap" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_free'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("total") AS mean_total FROM "swap" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_total'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("total") AS mean_total FROM "swap" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_total'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="swap in and out",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("in") AS mean_in FROM "swap" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_in'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("in") AS mean_in FROM "swap" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_in'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("out") AS mean_out FROM "swap" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_out'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("out") AS mean_out FROM "swap" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_out'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+    Row(
+        panels=[
+            Graph(
+                title="swap used",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("used") AS mean_used FROM "swap" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_used'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("used") AS mean_used FROM "swap" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_used'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=SHORT_FORMAT, min=None, show=True),
+                    YAxis(format=SHORT_FORMAT, min=None, show=True)
+                ]
+            ),
+            Graph(
+                title="swap percent used",
+                span=6,
+                dataSource="{{database}}",
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT mean("used_percent") AS mean_used_percent FROM "swap" WHERE "host" =~ /^$m2l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m2l_used percent'
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT mean("used_percent") AS mean_used_percent FROM "swap" WHERE "host" =~ /^$m3l_host$/ AND $timeFilter GROUP BY time($__interval) fill(null)',
+                        alias='m3l_used percent'
+                    )
+                ],
+                yAxes=[
+                    YAxis(format=PERCENT_100_FORMAT, min=None, show=True),
+                    YAxis(format=PERCENT_100_FORMAT, min=None, show=True)
+                ]
+            )
+        ] # END panels
+    ), # END row
+  ]
+)

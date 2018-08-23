@@ -1,0 +1,121 @@
+import itertools
+import pdb
+from grafanalib.dynamic.core import *
+from grafanalib.dynamic.dashboard import Dashboard
+
+domains = [
+    "AdsAndMerch", "Charity", "CustomerConnection", "Foundations", "MarketingTech",
+    "Payments", "Search", "Selling", "ShoppingExperience/Browse",
+    "ShoppingExperience/Engagement/HomeScreen", "ShoppingExperience/ViewItem",
+    "ShoppingExperience/ProductRelatedPage", "ShoppingExperience/Search",
+    "Target", "Verticals", "UnTracked"
+]
+fxnl_areas = ["eBay", "nautilus"]
+
+ebay_Exclude = [
+    "ShoppingExperience/ProductRelatedPage", "ShoppingExperience/Search"
+]
+
+eBay_Domains = []
+rows_of_graphs = [
+    Row(
+        height=Pixels(25),
+        panels=[
+            TextHeader(
+                text='Current Status',
+                span=4
+            ),
+            TextHeader(
+                text='Historical Trend',
+                span=8
+            )
+        ]
+    )
+]
+for d in domains:
+    panels_contents = []
+    for f in fxnl_areas:
+        if d in ebay_Exclude:
+            if f == "nautilus":
+                pg = PieGraph(
+                    title="%s %s Current" % (d, f),
+                    span=4,
+                    dataSource='collectd',
+                    targets=[
+                        TargetInfluxDB(
+                            query='SELECT last(coverage) FROM "domain_coverage_ios" WHERE "domain" = \'%s\' AND "fxnl_area" = \'%s\'' % (f, d),
+                            alias='Covered', legendFormat="percent",
+                        ),
+                        TargetInfluxDB(
+                            query='SELECT 100 - last(coverage) FROM "domain_coverage_ios" WHERE "domain" = \'%s\' AND "fxnl_area" = \'%s\'' % (f, d),
+                            alias='Uncovered', legendFormat="percent",
+                        ),
+                    ],
+                    aliasColors={
+                        "Covered": "#7EB26D",
+                        "Uncovered": "#890F02"
+                    },
+                    legend=Legend(values=True)
+                )
+                panels_contents.append(pg)
+        else:
+            pg = PieGraph(
+                title="%s %s Current" % (d, f),
+                span=2,
+                dataSource='collectd',
+                targets=[
+                    TargetInfluxDB(
+                        query='SELECT last(coverage) FROM domain_coverage_ios WHERE "domain" = \'%s\' AND "fxnl_area" = \'%s\'' % (f, d),
+                        alias='Covered', legendFormat="percent",
+                    ),
+                    TargetInfluxDB(
+                        query='SELECT 100 - last(coverage) FROM "domain_coverage_ios" WHERE "domain" = \'%s\' AND "fxnl_area" = \'%s\'' % (f, d),
+                        alias='Uncovered', legendFormat="percent",
+                    ),
+                ],
+                aliasColors={
+                    "Covered": "#7EB26D",
+                    "Uncovered": "#890F02"
+                },
+                legend=Legend(values=True)
+            )
+            panels_contents.append(pg)
+
+    lb = Graph(
+        title=d,
+        span=8,
+        dataSource='collectd',
+        targets=[
+            TargetInfluxDB(
+                query='SELECT "coverage" FROM domain_coverage_ios WHERE "domain" = \'eBay\' AND fxnl_area = \'%s\' AND $timeFilter' % (d),
+                alias='eBay', legendFormat="percent",
+            ),
+            TargetInfluxDB(
+                query='SELECT "coverage" FROM domain_coverage_ios WHERE "domain" = \'nautilus\' AND fxnl_area = \'%s\' AND $timeFilter' % (d),
+                alias='Nautilus', legendFormat="percent",
+            ),
+        ],
+        aliasColors={
+            "Covered": "#7EB26D",
+            "Uncovered": "#890F02"
+        },
+        legend=Legend(values=True, current=True),
+        yAxes=[
+            YAxis(format='percent'),
+            YAxis(format=SHORT_FORMAT),
+        ],
+
+    )
+    panels_contents.append(lb)
+
+    r = Row(panels=panels_contents)
+
+    rows_of_graphs.append(r)
+
+dashboard = Dashboard(
+    # title='{{ dashboardname }}',
+    title="Templated ios Domain Coverage",
+    timezone="browser",
+    rows=rows_of_graphs
+
+)
