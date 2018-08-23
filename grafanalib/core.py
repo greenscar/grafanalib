@@ -3,7 +3,8 @@
 The functions in this module don't enforce Weaveworks policy, and only mildly
 encourage it by way of some defaults. Rather, they are ways of building
 arbitrary Grafana JSON.
-"""
+Originally pulled from https://github.com/weaveworks/grafanalib
+Apache License - https://github.com/weaveworks/grafanalib/blob/master/LICENSE"""
 
 import attr
 from attr.validators import instance_of
@@ -230,6 +231,31 @@ class Target(object):
             'step': self.step,
         }
 
+
+@attr.s
+class TargetInfluxDB(object):
+
+    query = attr.ib() 
+    rawQuery = attr.ib(default=True)
+    resultFormat = attr.ib(default="time_series")
+    dsType = attr.ib(default="influxdb")
+    alias = attr.ib(default="")
+    legendFormat = attr.ib(default="")
+    intervalFactor = attr.ib(default=2)
+    refId = attr.ib(default="")
+    step = attr.ib(default=DEFAULT_STEP)
+
+    def to_json_data(self):
+        return {
+            'query': self.query,
+            'rawQuery': self.rawQuery,
+            'resultFormat': self.resultFormat,
+            'dsType': self.dsType,
+            'alias': self.alias,
+            'legendFormat': self.legendFormat,
+            'refId': self.refId,
+            'step': self.step,
+        }
 
 @attr.s
 class Tooltip(object):

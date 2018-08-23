@@ -1,4 +1,6 @@
-"""Generate JSON Grafana dashboards."""
+"""Generate JSON Grafana dashboards.
+Originally pulled from https://github.com/weaveworks/grafanalib
+Apache License - https://github.com/weaveworks/grafanalib/blob/master/LICENSE"""
 
 import argparse
 import json

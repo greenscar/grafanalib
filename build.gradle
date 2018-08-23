@@ -1,0 +1,30 @@
+/*
+ * https://github.com/researchgate/gradle-release
+ */
+plugins {
+  id 'net.researchgate.release' version '2.4.0'
+  id 'org.ajoberstar.grgit' version '2.2.1'
+}
+
+def grgit = org.ajoberstar.grgit.Grgit.open(dir: project.projectDir)
+
+task build {
+    println 'Release ' + project.name + '-' + project.version + ' starting.'
+}
+
+release {
+    failOnCommitNeeded = true
+    failOnPublishNeeded = true
+    failOnSnapshotDependencies = true
+    failOnUnversionedFiles = true
+    failOnUpdateNeeded = true
+    versionPropertyFile = 'gradle.properties'  
+    tagTemplate = '${version}'
+    git { 
+        requireBranch = 'groot'
+        commitVersionFileOnly = false
+    }
+}
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.0'
+}
